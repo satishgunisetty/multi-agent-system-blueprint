@@ -115,7 +115,7 @@ class TokenRotatingPostgresSaver:
                     cur.fetchone()
                 log.info("Connection test successful")
 
-            #FIX: Use from_conn_string() method instead of constructor
+            # FIX: Use from_conn_string() method instead of constructor
             checkpointer_context = PostgresSaver.from_conn_string(conn_str)
             checkpointer = checkpointer_context.__enter__()
 
