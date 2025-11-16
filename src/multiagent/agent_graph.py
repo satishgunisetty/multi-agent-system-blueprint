@@ -1,4 +1,3 @@
-# Databricks notebook source
 import logging
 from typing import Literal
 from service.postgre_connection_manager import TokenRotatingPostgresSaver
