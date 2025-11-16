@@ -38,8 +38,6 @@ def route_to_agent(
     return "supervisor"
 
 
-# COMMAND ----------
-
 ############################################
 #        LakeBase PostGre Connection       #
 ############################################
@@ -57,8 +55,6 @@ def get_robust_checkpointer():
 
     return _token_rotating_saver.get_checkpointer()
 
-
-# COMMAND ----------
 
 ############################################
 #        Simple Multi-Agent Graph          #
