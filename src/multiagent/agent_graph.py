@@ -1,6 +1,3 @@
-# Databricks notebook source
-
-# COMMAND ----------
 import logging
 from typing import Literal
 from service.postgre_connection_manager import TokenRotatingPostgresSaver
@@ -40,7 +37,6 @@ def route_to_agent(
     return "supervisor"
 
 
-# COMMAND ----------
 ############################################
 #        LakeBase PostGre Connection       #
 ############################################
@@ -58,8 +54,6 @@ def get_robust_checkpointer():
 
     return _token_rotating_saver.get_checkpointer()
 
-
-# COMMAND ----------
 
 ############################################
 #        Simple Multi-Agent Graph          #
