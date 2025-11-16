@@ -68,7 +68,7 @@ class RobustLakebaseConnectionManager:
         # Enhanced connection string based on documentation best practices
         conn_str = (
             f"postgresql://{encoded_username}:{encoded_token}@"
-            f"instance-d739603c-537e-4465-8e8d-cf067a3c45ba.database.azuredatabricks.net:5432/"
+            f"instance-f3fd2ceb-e103-44cf-a582-9a786995ebda.database.cloud.databricks.com:5432/"
             f"databricks_postgres?"
             f"sslmode=require&"  # SSL mandatory for token auth per docs
             f"connect_timeout=30&"
@@ -88,7 +88,7 @@ class TokenRotatingPostgresSaver:
     def __init__(
         self,
         instance_name="source-to-pay-memory",
-        username="satish.gunisetty@reckitt.com",
+        username="satish_gunisetty@epam.com",
     ):
         self.connection_manager = RobustLakebaseConnectionManager(instance_name)
         self.username = username
