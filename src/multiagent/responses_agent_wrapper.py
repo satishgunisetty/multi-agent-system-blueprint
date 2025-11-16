@@ -13,7 +13,7 @@ from src.multiagent.util.message_utils import (
     convert_to_langchain_messages,
     get_final_response_text,
 )
-from agent_graph import build_simple_multiagent_system
+from src.multiagent.agent_graph import build_simple_multiagent_system
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

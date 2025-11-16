@@ -112,41 +112,78 @@ print(result.model_dump(exclude_none=True))
 
 # COMMAND ----------
 
-# DBTITLE 1,Logged it as MlFLow Model
+# Save as log_model_with_src.py (Databricks notebook cell)
 import mlflow
-from pkg_resources import get_distribution
+from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
+import sys
 
+# Set a custom experiment name
+EXPERIMENT_NAME = "/Shared/multiagent_source_to_pay"
+mlflow.set_experiment(EXPERIMENT_NAME)
+
+# =========== CONFIG =============
+REPO_ROOT = "/Workspace/Users/satish_gunisetty@epam.com/multi-agent-system-blueprint"
+SRC_DIR = Path(REPO_ROOT) / "src"   # <--- we will bundle this directory
+# =================================
+
+# Ensure src is on sys.path so we can import AGENT
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+# Import the python_model object (must be mlflow.pyfunc.PythonModel-like or ResponsesAgent)
+from src.multiagent.responses_agent_wrapper import AGENT
+
+# Example input
 input_example = {
     "input": [{"role": "user", "content": "Give me the details of PO PO1000"}],
     "custom_inputs": {"thread_id": "test-session-1"},
 }
 
-with mlflow.start_run():
+# helper to build pip requirements (optional)
+def get_ver(pkg_name: str):
+    try:
+        return version(pkg_name)
+    except PackageNotFoundError:
+        return None
+
+pip_requirements = []
+for pkg in [
+    "mlflow",
+    "langchain-core",
+    "databricks-langchain",
+    "langgraph",
+    "databricks-connect",
+    "psycopg[binary,pool]",
+    "databricks-sql-connector",
+    "langgraph-checkpoint-postgres",
+    "psycopg"
+]:
+    v = get_ver(pkg)
+    pip_requirements.append(f"{pkg}=={v}" if v else pkg)
+
+# ====== IMPORTANT: point code_paths to the SRC_DIR so artifact contains `src/...` ======
+code_paths = [str(SRC_DIR)]
+
+# sanity check
+if not SRC_DIR.exists():
+    raise FileNotFoundError(f"src directory not found at: {SRC_DIR}")
+
+with mlflow.start_run() as run:
     logged_agent_info = mlflow.pyfunc.log_model(
-        name="AGENT",
-        python_model="responses_agent_wrapper.py",
+        artifact_path="AGENT",
+        python_model="../responses_agent_wrapper.py",           # object/class (not path string)
+        code_paths=code_paths,        # bundles the whole src/ directory
+        pip_requirements=pip_requirements,
         input_example=input_example,
-        code_paths=[
-            "agents.py",
-            "constants.py",
-            "dataservice.py",
-            "tools.py",
-            "message_utils.py",
-            "postgre_connection_manager.py",
-        ],
-        pip_requirements=[
-            f"mlflow=={get_distribution('mlflow').version}",
-            f"langchain-core=={get_distribution('langchain-core').version}",
-            f"databricks-langchain=={get_distribution('databricks-langchain').version}",
-            f"langgraph=={get_distribution('langgraph').version}",
-            f"databricks-connect=={get_distribution('databricks-connect').version}",
-            f"psycopg[binary,pool]=={get_distribution('psycopg[binary,pool]').version}",
-            f"databricks-sql-connector=={get_distribution('databricks-sql-connector').version}",
-            f"langgraph-checkpoint-postgres=={get_distribution('langgraph-checkpoint-postgres').version}",
-            f"psycopg=={get_distribution('psycopg').version}",
-        ],
     )
-print(f"Model logged under experiment: {EXPERIMENT_NAME}")
+
+print("Logged model run_id:", run.info.run_id)
+
+
+# COMMAND ----------
+
+logged_agent_info.run_id
 
 # COMMAND ----------
 
@@ -167,8 +204,8 @@ mlflow.models.predict(
 mlflow.set_registry_uri("databricks-uc")
 
 # Catalog + schema + model name
-catalog_name = "genesis_dev_platform"
-schema_name = "playground"
+catalog_name = "agentic_ai_poc"
+schema_name = "assets"
 model_name = "multiagent_source_to_pay"
 UC_MODEL_NAME = f"{catalog_name}.{schema_name}.{model_name}"
 
@@ -183,8 +220,9 @@ uc_registered_model_info = mlflow.register_model(
 # DBTITLE 1,Testing the Registered Model
 # Test the registered model
 import mlflow
+import uuid
 
-model_uri = "models:/genesis_dev_platform.playground.multiagent_source_to_pay/42"
+model_uri = "models:/agentic_ai_poc.assets.multiagent_source_to_pay/2"
 loaded_agent = mlflow.pyfunc.load_model(model_uri)
 
 thread_id = f"local-mlflow-test-{str(uuid.uuid4())[:8]}"
@@ -305,14 +343,19 @@ print("✅ Registry test result:", result)
 
 # COMMAND ----------
 
+dbutils.secrets.listScopes()
+
+# COMMAND ----------
+
 # DBTITLE 1,Deploying the Model Serving Endpoint
 from databricks import agents
 
 # -----------------------------
 # Step 1: Load secrets from Databricks Vault
 # -----------------------------
-DATABRICKS_HOST = "https://adb-1802336422986531.11.azuredatabricks.net"
-DATABRICKS_TOKEN = dbutils.secrets.get(scope="playground_scope", key="DATABRICKS_TOKEN")
+DATABRICKS_HOST = "https://dbc-29254c33-0fad.cloud.databricks.com"
+# DATABRICKS_TOKEN = dbutils.secrets.get(scope="sgun-scope", key="DATABRICKS_TOKEN")
+secret_scope = "sgun-scope"
 
 
 # -----------------------------
@@ -320,23 +363,24 @@ DATABRICKS_TOKEN = dbutils.secrets.get(scope="playground_scope", key="DATABRICKS
 # -----------------------------
 environment_vars = {
     "DATABRICKS_HOST": DATABRICKS_HOST,
-    "DATABRICKS_TOKEN": DATABRICKS_TOKEN,
+    "DATABRICKS_TOKEN": f"{{{{secrets/{secret_scope}/DATABRICKS_TOKEN}}}}",
     "ENABLE_MLFLOW_TRACING": "true",
-    "MLFLOW_EXPERIMENT_NAME": "/Shared/multiagent_source_to_pay",
-    "MLFLOW_EXPERIMENT_ID": "2845496865144127",
+    "MLFLOW_EXPERIMENT_ID": "569153060676829",
 }
 
 
 # Catalog + schema + model name
-catalog_name = "genesis_dev_platform"
-schema_name = "playground"
+catalog_name = "agentic_ai_poc"
+schema_name = "assets"
 model_name = "multiagent_source_to_pay"
 UC_MODEL_NAME = f"{catalog_name}.{schema_name}.{model_name}"
 
 agents.deploy(
-    UC_MODEL_NAME,
-    42,
+    model_name=UC_MODEL_NAME,
+    model_version=2,
+    endpoint_name="source-to-pay",
     # uc_registered_model_info.version,
     tags={"type": "blueprint", "owner": "Satish Gunisetty"},
     environment_vars=environment_vars,
+    scale_to_zero=True,
 )
