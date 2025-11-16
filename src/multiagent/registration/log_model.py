@@ -5,7 +5,7 @@
 # COMMAND ----------
 
 # DBTITLE 1,Testing Locally
-from ..responses_agent_wrappers import AGENT
+from src.multiagent.responses_agent_wrapper import AGENT
 import mlflow
 import uuid
 

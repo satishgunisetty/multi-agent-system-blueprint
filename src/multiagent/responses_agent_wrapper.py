@@ -9,7 +9,7 @@ from mlflow.types.responses import (
     ResponsesAgentResponse,
     ResponsesAgentStreamEvent,
 )
-from util.message_utils import (
+from src.multiagent.util.message_utils import (
     convert_to_langchain_messages,
     get_final_response_text,
 )
@@ -110,23 +110,6 @@ class MultiAgentResponsesWrapper(ResponsesAgent):
         except Exception as e:
             log.error(f"Graph invoke failed with: {e}")
             raise
-
-    # def _invoke_graph(self, messages, thread_id: str) -> str:
-    #     """Invoke the graph with complete state."""
-    #     log.info(f" _invoke_graph called with {len(messages)} messages")
-    #     try:
-    #         state = {
-    #             "messages": messages,
-    #             "session_id": thread_id,  # Populate all State fields
-    #         }
-    #         config = {"configurable": {"thread_id": thread_id}}
-    #         log.info(" About to call graph.invoke")
-    #         result = self.graph.invoke(state, config=config)
-    #         log.info(" Graph invoke succeeded")
-    #         return get_final_response_text(result.get("messages", []))
-    #     except Exception as e:
-    #         log.info(f" Graph invoke failed with: {e}")
-    #         raise
 
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
         log.info("Wrapper predict called")

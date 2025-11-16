@@ -7,7 +7,12 @@ import json
 from datetime import datetime, timedelta
 from typing import List
 from langchain_core.tools import tool
-from data_service import data_store, InvoiceStatus, POStatus, ServiceNowTicket
+from src.multiagent.service.data_service import (
+    data_store,
+    InvoiceStatus,
+    POStatus,
+    ServiceNowTicket,
+)
 
 
 # ============================================================
