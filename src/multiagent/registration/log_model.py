@@ -124,7 +124,7 @@ mlflow.set_experiment(EXPERIMENT_NAME)
 
 # =========== CONFIG =============
 REPO_ROOT = "/Workspace/Users/satish_gunisetty@epam.com/multi-agent-system-blueprint"
-SRC_DIR = Path(REPO_ROOT) / "src"   # <--- we will bundle this directory
+SRC_DIR = Path(REPO_ROOT) / "src"  # <--- we will bundle this directory
 # =================================
 
 # Ensure src is on sys.path so we can import AGENT
@@ -140,12 +140,14 @@ input_example = {
     "custom_inputs": {"thread_id": "test-session-1"},
 }
 
+
 # helper to build pip requirements (optional)
 def get_ver(pkg_name: str):
     try:
         return version(pkg_name)
     except PackageNotFoundError:
         return None
+
 
 pip_requirements = []
 for pkg in [
@@ -157,7 +159,7 @@ for pkg in [
     "psycopg[binary,pool]",
     "databricks-sql-connector",
     "langgraph-checkpoint-postgres",
-    "psycopg"
+    "psycopg",
 ]:
     v = get_ver(pkg)
     pip_requirements.append(f"{pkg}=={v}" if v else pkg)
@@ -172,8 +174,8 @@ if not SRC_DIR.exists():
 with mlflow.start_run() as run:
     logged_agent_info = mlflow.pyfunc.log_model(
         artifact_path="AGENT",
-        python_model="../responses_agent_wrapper.py",           # object/class (not path string)
-        code_paths=code_paths,        # bundles the whole src/ directory
+        python_model="../responses_agent_wrapper.py",  # object/class (not path string)
+        code_paths=code_paths,  # bundles the whole src/ directory
         pip_requirements=pip_requirements,
         input_example=input_example,
     )

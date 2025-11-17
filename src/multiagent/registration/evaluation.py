@@ -26,12 +26,10 @@ eval_data = [
                     {
                         "role": "user",
                         "content": "What is the status of PO 10000?",
-                        "type": "message"
+                        "type": "message",
                     }
                 ],
-                "custom_inputs": {
-                    "thread_id": "eval-session-1"
-                }
+                "custom_inputs": {"thread_id": "eval-session-1"},
             }
         },
         "expectations": {
@@ -43,19 +41,15 @@ eval_data = [
             "inputs_dict": {
                 "input": [
                     {
-                        "role": "user", 
+                        "role": "user",
                         "content": "Give me all pending purchase orders",
-                        "type": "message"
+                        "type": "message",
                     }
                 ],
-                "custom_inputs": {
-                    "thread_id": "eval-session-2"
-                }
+                "custom_inputs": {"thread_id": "eval-session-2"},
             }
         },
-        "expectations": {
-            "expected_response": "List or table of pending POs."
-        },
+        "expectations": {"expected_response": "List or table of pending POs."},
     },
     {
         "inputs": {
@@ -64,31 +58,19 @@ eval_data = [
                     {
                         "role": "user",
                         "content": "Show me the rejected invoices",
-                        "type": "message"
+                        "type": "message",
                     }
                 ],
-                "custom_inputs": {
-                    "thread_id": "eval-session-3"
-                }
+                "custom_inputs": {"thread_id": "eval-session-3"},
             }
         },
-        "expectations": {
-            "expected_response": "List or table of rejected invoices."
-        },
+        "expectations": {"expected_response": "List or table of rejected invoices."},
     },
     {
         "inputs": {
             "inputs_dict": {
-                "input": [
-                    {
-                        "role": "user",
-                        "content": "Hello",
-                        "type": "message"
-                    }
-                ],
-                "custom_inputs": {
-                    "thread_id": "eval-session-5"
-                }
+                "input": [{"role": "user", "content": "Hello", "type": "message"}],
+                "custom_inputs": {"thread_id": "eval-session-5"},
             }
         },
         "expectations": {
@@ -104,45 +86,49 @@ model_version = 2
 
 loaded_model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_version}")
 
+
 def predict_fn(inputs_dict):
     """
     The parameter name 'inputs_dict' must match the key in your eval_data inputs.
     """
     try:
         print(f"📝 Input received: {inputs_dict}")
-        
+
         # Call the model with the correct format
         results = loaded_model.predict(inputs_dict)
-        
+
         print(f"📤 Model returned: {type(results)}")
-        
+
         # Extract the text content from your ResponsesAgent output format
         if isinstance(results, dict):
             # Handle ResponsesAgent format: {'object': 'response', 'output': [...]}
-            if 'output' in results and isinstance(results['output'], list):
-                output_item = results['output'][0]
-                if 'content' in output_item and isinstance(output_item['content'], list):
+            if "output" in results and isinstance(results["output"], list):
+                output_item = results["output"][0]
+                if "content" in output_item and isinstance(
+                    output_item["content"], list
+                ):
                     # Extract text from content array
-                    text_content = output_item['content'][0].get('text', '')
+                    text_content = output_item["content"][0].get("text", "")
                     print(f"✅ Extracted text: {text_content[:100]}...")
                     return text_content
-                elif 'content' in output_item:
-                    return str(output_item['content'])
+                elif "content" in output_item:
+                    return str(output_item["content"])
             # Fallback for other dict formats
-            elif 'content' in results:
-                return results['content']
-        
+            elif "content" in results:
+                return results["content"]
+
         # Handle list format
         elif isinstance(results, list) and len(results) > 0:
-            if isinstance(results[0], dict) and 'content' in results[0]:
-                return results[0]['content']
-        
+            if isinstance(results[0], dict) and "content" in results[0]:
+                return results[0]["content"]
+
         # Fallback to string conversion
         return str(results)
-        
+
     except Exception as e:
         print(f"❌ Prediction error: {e}")
         return f"Error: {str(e)}"
+
 
 # Test the prediction function first
 print("🧪 Testing prediction function...")
@@ -159,12 +145,9 @@ results = mlflow.genai.evaluate(
         Correctness(),
         Safety(),
         RelevanceToQuery(),
-        Guidelines(
-            guidelines="""Response must be professional"""
-        ),
+        Guidelines(guidelines="""Response must be professional"""),
     ],
 )
 
 print("✅ Evaluation completed!")
 results
-
