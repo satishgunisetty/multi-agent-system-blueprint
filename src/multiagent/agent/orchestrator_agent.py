@@ -10,6 +10,7 @@ from src.multiagent.util.agent_utils import (
     safe_node_wrapper,
     detect_generic_help,
     detect_support_request,
+    detect_websearch_request,
 )
 
 log = logging.getLogger(__name__)
@@ -62,6 +63,10 @@ def supervisor_node(state: State):
                     )
                 ],
             }
+
+        # if detect_support_request(user_message):
+        #     log.info(f"This is a Web Search request message {user_message}")
+        #     log.info(f"Updated State Schema: {state} ")
 
         # Case 2: Problem detected → offer ServiceNow ticket
         if (
@@ -138,6 +143,13 @@ def supervisor_node(state: State):
         - System access issues or technical problems
         - Change requests for S2P configurations
         - User support and troubleshooting
+        
+        **WEB_AGENT** – Handle requests requiring external or public information:
+        - Searching the web for general or domain knowledge
+        - Public supplier information, industry news, or regulatory updates
+        - Market trends, best practices, procurement benchmarks
+        - Definitions, explanations, or answers not found in SAP/ServiceNow
+        - Any question requiring real-time web search or external verification
 
         **GREETING** - Handle conversational starters:
         - Greetings: "Hi", "Hello", "Good morning/afternoon"
@@ -151,13 +163,16 @@ def supervisor_node(state: State):
         - Personal requests or non-business conversations
 
         ROUTING RULES:
-        1. If the request mentions specific transaction numbers, amounts, or vendor names → likely SAP_AGENT
-        2. If the request asks to "create a ticket" or mentions "issue" or "problem" → likely SERVICENOW_AGENT  
-        3. When in doubt between SAP_AGENT and SERVICENOW_AGENT, default to SAP_AGENT for data queries, SERVICENOW_AGENT for problem resolution
-        4. Be decisive - choose the single best option based on primary intent
-
+        1. If the request mentions specific PO numbers, invoice details, vendor names, material numbers, or amounts → choose SAP_AGENT.
+        2. If the user asks to “create a ticket”, “raise an issue”, “report a problem”, or mentions ServiceNow → choose SERVICENOW_AGENT.
+        3. If the user asks for information that is NOT in SAP or ServiceNow (e.g., public info, general knowledge, definitions, regulations) → choose WEB_AGENT.
+        4. When unsure between SAP vs ServiceNow:
+           - Data lookup or business details → SAP_AGENT.
+           - Issue resolution or ticketing → SERVICENOW_AGENT.
+        5. Be decisive. Choose the **single best** routing option.
+        
         RESPONSE FORMAT:
-        Provide ONLY the routing decision: SAP_AGENT, SERVICENOW_AGENT, GREETING, or OUT_OF_SCOPE
+        Return ONLY one of: SAP_AGENT, SERVICENOW_AGENT, WEB_AGENT, GREETING, OUT_OF_SCOPE
         """
 
         try:
@@ -177,6 +192,11 @@ def supervisor_node(state: State):
             return {
                 **state,
                 "messages": [AIMessage(content="ROUTE_TO: SERVICENOW_AGENT")],
+            }
+        elif "WEB" in agent_name:
+            return {
+                **state,
+                "messages": [AIMessage(content="ROUTE_TO: WEB_AGENT")],
             }
         elif "GREETING" in agent_name:
             return {

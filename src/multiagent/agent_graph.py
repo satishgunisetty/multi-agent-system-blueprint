@@ -8,7 +8,9 @@ from src.multiagent.agent.state import State
 from src.multiagent.agent.orchestrator_agent import supervisor_node
 from src.multiagent.agent.sap_agent import sap_agent_node
 from src.multiagent.agent.snow_agent import servicenow_agent_node
+from src.multiagent.agent.web_search_agent import web_agent_node
 from src.multiagent.service.tools import sap_tools, snow_tools
+from src.multiagent.service.web_tools import web_search_tools
 
 ############################################
 #           Simple Routing Logic           #
@@ -33,6 +35,8 @@ def route_to_agent(
             return "sap_agent"
         elif "SERVICENOW_AGENT" in route_decision:
             return "servicenow_agent"
+        elif "WEB_AGENT" in route_decision:
+            return "web_agent"
 
     return "supervisor"
 
@@ -70,10 +74,12 @@ def build_simple_multiagent_system():
     state_graph.add_node("supervisor", supervisor_node)
     state_graph.add_node("sap_agent", sap_agent_node)
     state_graph.add_node("servicenow_agent", servicenow_agent_node)
+    state_graph.add_node("web_agent", web_agent_node)
 
     # Tool nodes
     state_graph.add_node("sap_tools", ToolNode(tools=sap_tools))
     state_graph.add_node("servicenow_tools", ToolNode(tools=snow_tools))
+    state_graph.add_node("web_tools", ToolNode(tools=web_search_tools))
 
     # --- Edges ---
     # Start → Supervisor
@@ -86,6 +92,7 @@ def build_simple_multiagent_system():
         {
             "sap_agent": "sap_agent",
             "servicenow_agent": "servicenow_agent",
+            "web_agent": "web_agent",
             "supervisor": END,
         },
     )
@@ -110,8 +117,19 @@ def build_simple_multiagent_system():
         },
     )
 
+    # ServiceNow Agent → Tools OR return to Supervisor
+    state_graph.add_conditional_edges(
+        "web_agent",
+        tools_condition,
+        {
+            "tools": "web_tools",
+            "__end__": "supervisor",
+        },
+    )
+
     state_graph.add_edge("sap_tools", "supervisor")
     state_graph.add_edge("servicenow_tools", "supervisor")
+    state_graph.add_edge("web_tools", "supervisor")
 
     # Get the persistent checkpointer
     memory = get_robust_checkpointer()

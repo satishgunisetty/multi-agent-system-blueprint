@@ -1,6 +1,15 @@
 # LLM_ENDPOINT_NAME = "azure-gpt4o-mini-testing"
 # LLM_ENDPOINT_NAME = "model-daia-dev-genai-platform-o4-mini"
+
 LLM_ENDPOINT_NAME = "databricks-gpt-5"
+
+WEB_SEARCH_PATTERNS = [
+    "internet search",
+    "web search",
+    "look up online",
+    "search the web",
+]
+
 HELP_INTENT_PATTERNS = [
     r"\bhow\s+can\s+you\s+help\b",
     r"\bwhat\s+can\s+you\s+do\b",

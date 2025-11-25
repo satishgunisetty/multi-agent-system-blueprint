@@ -6,7 +6,11 @@ from typing import Dict, Any
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
 from src.multiagent.agent.state import State
-from src.multiagent.util.constants import HELP_INTENT_PATTERNS, SUPPORT_KEYWORDS
+from src.multiagent.util.constants import (
+    HELP_INTENT_PATTERNS,
+    SUPPORT_KEYWORDS,
+    WEB_SEARCH_PATTERNS,
+)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -224,3 +228,9 @@ def detect_support_request(user_text: str) -> bool:
     """Detects actual issue/problem requiring support."""
     text = user_text.lower()
     return any(keyword in text for keyword in SUPPORT_KEYWORDS)
+
+
+def detect_websearch_request(user_text: str) -> bool:
+    """Detects actual issue/problem requiring support."""
+    text = user_text.lower()
+    return any(keyword in text for keyword in WEB_SEARCH_PATTERNS)
